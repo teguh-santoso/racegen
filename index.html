@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Balap Mobil Anak</title>
+  <link rel="stylesheet" href="style.css" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="game-container"></div>
+
+  <div id="hud-top">
+    <div id="stars">★ 0/8</div>
+    <div id="stick-status">Stick: belum tersambung</div>
+  </div>
+
+  <div id="message"></div>
+
+  <div id="start-overlay">
+    <div class="panel">
+      <h1>Balap Mobil Anak</h1>
+      <p class="subtitle">Ayo kumpulkan semua bintang di trek!</p>
+      <button id="start-button">Mulai Main</button>
+      <div class="controls-help">
+        <p><strong>Keyboard:</strong> ← → belok &nbsp; ↑ gas &nbsp; ↓ rem &nbsp; Spasi klakson</p>
+        <p><strong>USB stick:</strong> analog kiri belok &nbsp; tombol A / RT gas &nbsp; tombol B / LT rem</p>
+        <p class="note">Mobil jalan sendiri pelan-pelan. Tidak ada kalah, yang penting senang!</p>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="main.js"></script>
+</body>
+</html>

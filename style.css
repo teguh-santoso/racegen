@@ -1,0 +1,150 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: "Comic Sans MS", "Chalkboard SE", "Trebuchet MS", system-ui, sans-serif;
+  background: #2e7d32;
+}
+
+#game-container {
+  position: fixed;
+  inset: 0;
+}
+
+#game-container canvas {
+  display: block;
+}
+
+#hud-top {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  pointer-events: none;
+  z-index: 5;
+}
+
+#stars {
+  background: #ffca28;
+  color: #4e3400;
+  font-size: 28px;
+  font-weight: 700;
+  padding: 8px 20px;
+  border-radius: 999px;
+  border: 3px solid #fff;
+}
+
+#stick-status {
+  background: #ffffff;
+  color: #1b5e20;
+  font-size: 16px;
+  font-weight: 700;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 3px solid #1b5e20;
+}
+
+#stick-status.connected {
+  background: #1b5e20;
+  color: #fff;
+}
+
+#message {
+  position: fixed;
+  top: 22%;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 56px;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 3px 3px 0 #1b5e20, -2px -2px 0 #1b5e20;
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+  z-index: 6;
+}
+
+#message.show {
+  opacity: 1;
+}
+
+#start-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(27, 94, 32, 0.82);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  padding: 16px;
+}
+
+#start-overlay.hidden {
+  display: none;
+}
+
+.panel {
+  background: #fffde7;
+  border: 6px solid #ff8f00;
+  border-radius: 24px;
+  padding: 32px 40px;
+  max-width: 560px;
+  text-align: center;
+}
+
+.panel h1 {
+  font-size: 44px;
+  color: #e65100;
+  margin-bottom: 4px;
+}
+
+.subtitle {
+  font-size: 22px;
+  color: #33691e;
+  margin-bottom: 20px;
+}
+
+#start-button {
+  font-family: inherit;
+  font-size: 32px;
+  font-weight: 700;
+  color: #fff;
+  background: #2e9e44;
+  border: 4px solid #1b5e20;
+  border-radius: 18px;
+  padding: 14px 48px;
+  cursor: pointer;
+  margin-bottom: 20px;
+}
+
+#start-button:hover {
+  background: #37b24d;
+}
+
+.controls-help {
+  font-size: 17px;
+  color: #424242;
+  line-height: 1.6;
+}
+
+.controls-help .note {
+  margin-top: 10px;
+  font-weight: 700;
+  color: #e65100;
+}
+
+@media (max-width: 600px) {
+  .panel h1 { font-size: 32px; }
+  #message { font-size: 36px; }
+  #stars { font-size: 22px; }
+}
