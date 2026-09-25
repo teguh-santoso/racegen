@@ -26,9 +26,9 @@ Lalu buka di browser: http://localhost:8000
 | Belok | ← → atau A D     | Analog kiri               |
 | Gas   | ↑ atau W         | Tombol A / RT             |
 | Rem   | ↓ atau S         | Tombol B / LT             |
-| Klakson | Spasi          | —                         |
+| Klakson | H              | —                         |
 | Mulai | Enter            | Tombol Start              |
-| Jeda / lanjut | P atau Esc, tombol Jeda | Tombol Start |
+| Jeda / lanjut | Spasi, P atau Esc, tombol Jeda | Tombol Start |
 
 Colok USB stick sebelum/sesudah game dibuka — status di kanan atas
 akan berubah menjadi "Stick tersambung". Jika stick tidak terbaca,

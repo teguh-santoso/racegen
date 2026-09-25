@@ -1,9 +1,38 @@
 import * as THREE from "three";
 
 // ---------- Konfigurasi ramah anak ----------
-const TRACK_RX = 30;      // jari-jari trek (x)
-const TRACK_RZ = 20;      // jari-jari trek (z)
+// ---------- Trek: kurva tertutup dengan belokan kiri & kanan ----------
+// Bentuk kacang (kidney) berlengkung S supaya anak latihan belok
+// kiri dan kanan, bukan satu arah terus.
 const TRACK_HALF = 6;     // setengah lebar trek
+const trackCurve = new THREE.CatmullRomCurve3([
+  new THREE.Vector3(34, 0, 0),
+  new THREE.Vector3(28, 0, 14),
+  new THREE.Vector3(12, 0, 18),
+  new THREE.Vector3(0, 0, 12),
+  new THREE.Vector3(-10, 0, 16),
+  new THREE.Vector3(-24, 0, 14),
+  new THREE.Vector3(-32, 0, 2),
+  new THREE.Vector3(-26, 0, -10),
+  new THREE.Vector3(-10, 0, -8),
+  new THREE.Vector3(0, 0, -16),
+  new THREE.Vector3(14, 0, -14),
+  new THREE.Vector3(26, 0, -10),
+], true, "catmullrom", 0.6);
+
+// Titik contoh sepanjang trek + normal 2D (tegak lurus di bidang xz)
+const trackPoints = trackCurve.getSpacedPoints(240);
+trackPoints.pop(); // buang titik duplikat di ujung
+const trackNormals = trackPoints.map((p, i) => {
+  const prev = trackPoints[(i - 1 + trackPoints.length) % trackPoints.length];
+  const next = trackPoints[(i + 1) % trackPoints.length];
+  const tx = next.x - prev.x;
+  const tz = next.z - prev.z;
+  const len = Math.hypot(tx, tz) || 1;
+  return { x: -tz / len, z: tx / len };
+});
+const startTangent = trackCurve.getTangent(0);
+const startHeading = Math.atan2(startTangent.x, startTangent.z);
 const BASE_SPEED = 8;     // jalan otomatis pelan
 const MAX_SPEED = 13;     // gas penuh tetap pelan
 const MIN_SPEED = 3;      // rem tidak pernah berhenti total
@@ -105,25 +134,16 @@ ground.receiveShadow = true;
 scene.add(ground);
 
 // ---------- Trek oval (pita segitiga buatan sendiri) ----------
-function ellipsePoint(angle, rx, rz) {
-  return new THREE.Vector3(Math.cos(angle) * rx, 0, Math.sin(angle) * rz);
-}
 function buildTrackRibbon() {
-  const SEG = 96;
+  const N = trackPoints.length;
   const positions = [];
   const indices = [];
-  for (let i = 0; i <= SEG; i++) {
-    const a = (i / SEG) * Math.PI * 2;
-    const cx = Math.cos(a) * TRACK_RX;
-    const cz = Math.sin(a) * TRACK_RZ;
-    // normal arah radial (gradien elips), dinormalisasi
-    const nx = cx / (TRACK_RX * TRACK_RX);
-    const nz = cz / (TRACK_RZ * TRACK_RZ);
-    const len = Math.hypot(nx, nz) || 1;
-    const ox = (nx / len) * TRACK_HALF;
-    const oz = (nz / len) * TRACK_HALF;
-    positions.push(cx - ox, 0.05, cz - oz, cx + ox, 0.05, cz + oz);
-    if (i < SEG) {
+  for (let i = 0; i <= N; i++) {
+    const p = trackPoints[i % N];
+    const n = trackNormals[i % N];
+    positions.push(p.x - n.x * TRACK_HALF, 0.05, p.z - n.z * TRACK_HALF,
+                   p.x + n.x * TRACK_HALF, 0.05, p.z + n.z * TRACK_HALF);
+    if (i < N) {
       const b = i * 2;
       indices.push(b, b + 1, b + 2, b + 1, b + 3, b + 2);
     }
@@ -141,15 +161,16 @@ function buildTrackRibbon() {
 }
 scene.add(buildTrackRibbon());
 
-// Garis start
+// Garis start melintang trek (sumbu panjang = arah normal)
 {
-  const a = 0;
-  const c = ellipsePoint(a, TRACK_RX, TRACK_RZ);
+  const p0 = trackPoints[0];
+  const n0 = trackNormals[0];
   const line = new THREE.Mesh(
     new THREE.BoxGeometry(1.6, 0.08, TRACK_HALF * 2),
     new THREE.MeshStandardMaterial({ color: 0xffffff })
   );
-  line.position.set(c.x, 0.08, c.z);
+  line.position.set(p0.x, 0.08, p0.z);
+  line.rotation.y = Math.atan2(n0.x, n0.z);
   scene.add(line);
 }
 
@@ -158,17 +179,15 @@ scene.add(buildTrackRibbon());
   const postGeo = new THREE.BoxGeometry(0.9, 1.2, 0.9);
   const redMat = new THREE.MeshStandardMaterial({ color: 0xd23b2e, roughness: 0.8 });
   const whiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8 });
+  const NB = trackPoints.length;
+  const BSTEP = Math.floor(NB / 48);
   for (let side = -1; side <= 1; side += 2) {
     for (let i = 0; i < 48; i++) {
-      const a = (i / 48) * Math.PI * 2;
-      const cx = Math.cos(a) * TRACK_RX;
-      const cz = Math.sin(a) * TRACK_RZ;
-      const nx = cx / (TRACK_RX * TRACK_RX);
-      const nz = cz / (TRACK_RZ * TRACK_RZ);
-      const len = Math.hypot(nx, nz) || 1;
+      const p = trackPoints[(i * BSTEP) % NB];
+      const n = trackNormals[(i * BSTEP) % NB];
       const w = TRACK_HALF + 0.8;
       const post = new THREE.Mesh(postGeo, i % 2 === 0 ? redMat : whiteMat);
-      post.position.set(cx + (nx / len) * w * side, 0.6, cz + (nz / len) * w * side);
+      post.position.set(p.x + n.x * w * side, 0.6, p.z + n.z * w * side);
       post.castShadow = true;
       scene.add(post);
     }
@@ -186,8 +205,12 @@ scene.add(buildTrackRibbon());
     [42, 20], [-42, -18], [40, -30], [-40, 28], [8, -34], [-8, 34],
   ];
   for (const [tx, tz] of spots) {
-    const e = (tx / TRACK_RX) ** 2 + (tz / TRACK_RZ) ** 2;
-    if (e > 0.35 && e < 2.2) continue; // jangan menutupi trek
+    let minD = Infinity;
+    for (const s of trackPoints) {
+      const d = Math.hypot(tx - s.x, tz - s.z);
+      if (d < minD) minD = d;
+    }
+    if (minD < TRACK_HALF + 9) continue; // jangan menutupi trek
     const tree = new THREE.Group();
     const trunk = new THREE.Mesh(trunkGeo, trunkMat);
     trunk.position.y = 0.8;
@@ -251,8 +274,8 @@ const car = new THREE.Group();
 scene.add(car);
 
 // Posisi awal di garis start, menghadap arah trek
-car.position.set(TRACK_RX, 0, 0);
-heading = 0; // forward = (sin h, 0, cos h) -> +z, searah trek di garis start
+car.position.set(trackPoints[0].x, 0, trackPoints[0].z);
+heading = startHeading; // searah trek di garis start
 car.rotation.y = heading;
 
 // ---------- Bintang ----------
@@ -262,10 +285,11 @@ const stars = [];
   const starMat = new THREE.MeshStandardMaterial({
     color: 0xffd93b, emissive: 0xaa7700, roughness: 0.4,
   });
+  const SSTEP = Math.floor(trackPoints.length / TOTAL_STARS);
   for (let i = 0; i < TOTAL_STARS; i++) {
-    const a = (i / TOTAL_STARS) * Math.PI * 2 + 0.2;
+    const p = trackPoints[(i * SSTEP + 10) % trackPoints.length];
     const m = new THREE.Mesh(starGeo, starMat.clone());
-    m.position.set(Math.cos(a) * TRACK_RX, 1.4, Math.sin(a) * TRACK_RZ);
+    m.position.set(p.x, 1.4, p.z);
     m.castShadow = true;
     scene.add(m);
     stars.push({ mesh: m, taken: false, phase: Math.random() * Math.PI * 2 });
@@ -318,7 +342,8 @@ window.addEventListener("keydown", (e) => {
   if (e.key === "ArrowRight" || e.key === "d" || e.key === "D") keys.right = true;
   if (e.key === "ArrowUp" || e.key === "w" || e.key === "W") keys.gas = true;
   if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") keys.brake = true;
-  if (e.key === " ") { ensureAudio(); soundHorn(); }
+  if (e.key === " ") { e.preventDefault(); togglePause(); }
+  if (e.key === "h" || e.key === "H") { ensureAudio(); soundHorn(); }
   if (e.key === "Enter") startGame();
   if (e.key === "p" || e.key === "P" || e.key === "Escape") togglePause();
 });
@@ -380,6 +405,7 @@ function startGame() {
   ensureAudio();
   overlay.classList.add("hidden");
   showMessage("Ayo jalan! Kumpulkan bintang ★", 2500);
+  startButton.blur(); // supaya Spasi tidak menekan tombol yang fokus
 }
 startButton.addEventListener("click", startGame);
 
@@ -389,18 +415,22 @@ function togglePause() {
   pauseOverlay.classList.toggle("hidden", !paused);
   pauseButton.textContent = paused ? "Lanjut" : "Jeda";
   if (!paused) ensureAudio();
+  if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
 }
 pauseButton.addEventListener("click", togglePause);
 resumeButton.addEventListener("click", togglePause);
 
 // ---------- Fisika arcade super sederhana ----------
-function ellipseClosest(x, z) {
-  const e = (x / TRACK_RX) ** 2 + (z / TRACK_RZ) ** 2;
-  if (e < 1e-6) return { cx: TRACK_RX, cz: 0, dist: TRACK_RX };
-  const k = 1 / Math.sqrt(e);
-  const cx = x * k;
-  const cz = z * k;
-  return { cx, cz, dist: Math.hypot(x - cx, z - cz) };
+function closestOnTrack(x, z) {
+  let best = trackPoints[0];
+  let bestD2 = Infinity;
+  for (const s of trackPoints) {
+    const dx = x - s.x;
+    const dz = z - s.z;
+    const d2 = dx * dx + dz * dz;
+    if (d2 < bestD2) { bestD2 = d2; best = s; }
+  }
+  return { cx: best.x, cz: best.z, dist: Math.sqrt(bestD2) };
 }
 
 function updateCar(dt, gp) {
@@ -414,7 +444,7 @@ function updateCar(dt, gp) {
   if (keys.brake || gp.brake) target = MIN_SPEED;
 
   // Rumput di luar trek memperlambat (lembut, tanpa hukuman)
-  const { cx, cz, dist } = ellipseClosest(car.position.x, car.position.z);
+  const { dist } = closestOnTrack(car.position.x, car.position.z);
   if (dist > TRACK_HALF - 1) target *= 0.7;
 
   speed += (target - speed) * Math.min(1, dt * 2.5);
@@ -430,7 +460,7 @@ function updateCar(dt, gp) {
   car.position.z += fz * speed * dt;
 
   // Pagar lembut trek: dorong kembali ke dalam koridor
-  const after = ellipseClosest(car.position.x, car.position.z);
+  const after = closestOnTrack(car.position.x, car.position.z);
   if (after.dist > TRACK_HALF) {
     const excess = after.dist - TRACK_HALF;
     const dx = after.cx - car.position.x;
