@@ -14,6 +14,7 @@ const BOUND = 55;         // pagar luar lapangan
 
 // ---------- State ----------
 let started = false;
+let paused = false;
 let starCount = 0;
 let heading = 0;
 let speed = 0;
@@ -24,6 +25,9 @@ let startButtonPrev = false;
 const container = document.getElementById("game-container");
 const overlay = document.getElementById("start-overlay");
 const startButton = document.getElementById("start-button");
+const pauseButton = document.getElementById("pause-button");
+const pauseOverlay = document.getElementById("pause-overlay");
+const resumeButton = document.getElementById("resume-button");
 const starsEl = document.getElementById("stars");
 const stickEl = document.getElementById("stick-status");
 const messageEl = document.getElementById("message");
@@ -316,6 +320,7 @@ window.addEventListener("keydown", (e) => {
   if (e.key === "ArrowDown" || e.key === "s" || e.key === "S") keys.brake = true;
   if (e.key === " ") { ensureAudio(); soundHorn(); }
   if (e.key === "Enter") startGame();
+  if (e.key === "p" || e.key === "P" || e.key === "Escape") togglePause();
 });
 window.addEventListener("keyup", (e) => {
   if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") keys.left = false;
@@ -377,6 +382,16 @@ function startGame() {
   showMessage("Ayo jalan! Kumpulkan bintang ★", 2500);
 }
 startButton.addEventListener("click", startGame);
+
+function togglePause() {
+  if (!started) return;
+  paused = !paused;
+  pauseOverlay.classList.toggle("hidden", !paused);
+  pauseButton.textContent = paused ? "Lanjut" : "Jeda";
+  if (!paused) ensureAudio();
+}
+pauseButton.addEventListener("click", togglePause);
+resumeButton.addEventListener("click", togglePause);
 
 // ---------- Fisika arcade super sederhana ----------
 function ellipseClosest(x, z) {
@@ -494,13 +509,16 @@ function animate() {
   const t = clock.elapsedTime;
 
   const gp = readGamepad();
-  if (gp.startPressed && !startButtonPrev) startGame();
+  if (gp.startPressed && !startButtonPrev) {
+    if (!started) startGame();
+    else togglePause();
+  }
   startButtonPrev = gp.startPressed;
 
-  if (started) {
+  if (started && !paused) {
     updateCar(dt, gp);
     updateStars(t, dt);
-  } else {
+  } else if (!started) {
     // idle: kamera pelan mengelilingi trek sebelum Start
     const a = t * 0.08;
     camera.position.set(Math.cos(a) * 55, 30, Math.sin(a) * 55);

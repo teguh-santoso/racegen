@@ -28,6 +28,7 @@ Lalu buka di browser: http://localhost:8000
 | Rem   | ↓ atau S         | Tombol B / LT             |
 | Klakson | Spasi          | —                         |
 | Mulai | Enter            | Tombol Start              |
+| Jeda / lanjut | P atau Esc, tombol Jeda | Tombol Start |
 
 Colok USB stick sebelum/sesudah game dibuka — status di kanan atas
 akan berubah menjadi "Stick tersambung". Jika stick tidak terbaca,
