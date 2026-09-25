@@ -404,8 +404,10 @@ function updateCar(dt, gp) {
 
   speed += (target - speed) * Math.min(1, dt * 2.5);
 
-  // Belok proporsional kecepatan supaya tidak spin
-  heading += steer * TURN_RATE * (speed / MAX_SPEED) * dt;
+  // Belok proporsional kecepatan supaya tidak spin.
+  // Tanda minus: kamera di belakang mobil, jadi steer+ (kanan)
+  // harus memutar mobil ke kanan layar.
+  heading -= steer * TURN_RATE * (speed / MAX_SPEED) * dt;
 
   const fx = Math.sin(heading);
   const fz = Math.cos(heading);
